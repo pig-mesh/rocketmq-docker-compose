@@ -7,7 +7,7 @@ services:
     ports:
       - 9876:9876
     volumes:
-      - ./rmqnamesrv/logs:/home/rocketmq/logs
+      - ./broker.conf:/home/rocketmq/rocketmq-4.9.1/conf/broker.conf
     environment:
       JAVA_OPT_EXT: "-Duser.home=/home/rocketmq -Xms512M -Xmx512M -Xmn128m"
     command: ["sh","mqnamesrv"]
@@ -20,9 +20,7 @@ services:
       - 10911:10911
       - 10912:10912
     volumes:
-      - ./rmqbroker/logs:/home/rocketmq/logs
-      - ./rmqbroker/store:/home/rocketmq/store
-      - ./rmqbroker/brokerconf/broker.conf:/home/rocketmq/rocketmq-4.9.1/conf/broker.conf
+      - ./broker.conf:/home/rocketmq/rocketmq-4.9.1/conf/broker.conf
     links:
       - rmqnamesrv:namesrv
     environment:
@@ -39,3 +37,4 @@ services:
         JAVA_OPTS: "-Drocketmq.namesrv.addr=namesrv:9876"
     links:
       - rmqnamesrv:namesrv
+
