@@ -1,33 +1,41 @@
-version: '2'
+version: '3.8'
+
 services:
-  namesrv:
-    image: registry.silot.tech/common/apacherocketmq:4.5.0
+  rmqnamesrv:
+    image: apache/rocketmq:4.9.1
     container_name: rmqnamesrv
     ports:
       - 9876:9876
     volumes:
-      - ./data/namesrv/logs:/home/rocketmq/logs
-    command: sh mqnamesrv
+      - ./rmqnamesrv/logs:/home/rocketmq/logs
+    environment:
+      JAVA_OPT_EXT: "-Duser.home=/home/rocketmq -Xms512M -Xmx512M -Xmn128m"
+    command: ["sh","mqnamesrv"]
+
   broker:
-    image: registry.silot.tech/common/apacherocketmq:4.5.0
+    image: apache/rocketmq:4.9.1
     container_name: rmqbroker
-    links:
-      - namesrv
     ports:
       - 10909:10909
       - 10911:10911
-    environment:
-      - NAMESRV_ADDR=namesrv:9876
+      - 10912:10912
     volumes:
-      - ./data/broker/logs:/home/rocketmq/logs
-      - ./data/broker/store:/home/rocketmq/store
-      - ./data/broker/conf/broker.conf:/opt/rocketmq-4.5.0/conf/broker.conf
-    command: sh mqbroker -c /opt/rocketmq-4.5.0/conf/broker.conf
-  rocketmq-console:
-    image: styletang/rocketmq-console-ng:latest
-    depends_on:
-        - broker
-    ports:
-        - 18080:8080
+      - ./rmqbroker/logs:/home/rocketmq/logs
+      - ./rmqbroker/store:/home/rocketmq/store
+      - ./rmqbroker/brokerconf/broker.conf:/home/rocketmq/rocketmq-4.9.1/conf/broker.conf
+    links:
+      - rmqnamesrv:namesrv
     environment:
-      - NAMESRV_ADDR=namesrv:9876
+      NAMESRV_ADDR: namesrv:9876
+      JAVA_OPT_EXT: "-Duser.home=/home/rocketmq -Xms512M -Xmx512M -Xmn128m"
+    command: ["sh","mqbroker","-c","../conf/broker.conf","autoCreateTopicEnable=true"]
+
+  rmqdashboard:
+    image: apacherocketmq/rocketmq-dashboard:latest
+    container_name: rocketmq-dashboard
+    ports:
+      - 8080:8080
+    environment:
+        JAVA_OPTS: "-Drocketmq.namesrv.addr=namesrv:9876"
+    links:
+      - rmqnamesrv:namesrv
