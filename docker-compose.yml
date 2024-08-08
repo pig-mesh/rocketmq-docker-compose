@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   rmqnamesrv:
-    image: apache/rocketmq:4.9.1
+    image: registry.cn-hangzhou.aliyuncs.com/dockerhub_mirror/rocketmq:4.9.1
     container_name: rmqnamesrv
     ports:
       - 9876:9876
@@ -13,7 +13,7 @@ services:
     command: ["sh","mqnamesrv"]
 
   broker:
-    image: apache/rocketmq:4.9.1
+    image: registry.cn-hangzhou.aliyuncs.com/dockerhub_mirror/rocketmq:4.9.1
     container_name: rmqbroker
     ports:
       - 10909:10909
@@ -29,7 +29,7 @@ services:
     command: ["sh","mqbroker","-c","../conf/broker.conf","autoCreateTopicEnable=true"]
 
   rmqdashboard:
-    image: apacherocketmq/rocketmq-dashboard:latest
+    image: registry.cn-hangzhou.aliyuncs.com/dockerhub_mirror/rocketmq-dashboard:latest
     container_name: rocketmq-dashboard
     ports:
       - 8080:8080
