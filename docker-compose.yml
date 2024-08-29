@@ -1,33 +1,42 @@
-version: "3"
+version: '3.8'
 services:
-  #Service for nameserver
   namesrv:
-    container_name: RocketMQ-namesrv
     image: registry.cn-hangzhou.aliyuncs.com/dockerhub_mirror/rocketmq:5.3.0
-    command: sh mqnamesrv
-    restart: always
+    container_name: rmqnamesrv
     ports:
       - 9876:9876
-    volumes:
-      - ./namesrv/logs:/home/rocketmq/logs
-
-
-  #Service for broker
+    networks:
+      - rocketmq
+    command: sh mqnamesrv
   broker:
-    container_name: RocketMQ-broker
-    links:
-      - namesrv
     image: registry.cn-hangzhou.aliyuncs.com/dockerhub_mirror/rocketmq:5.3.0
-    command: sh mqbroker --enable-proxy -c /opt/rocketmq/conf/broker.conf
-    restart: always
+    container_name: rmqbroker
     ports:
-      - 8080:8080
       - 10909:10909
       - 10911:10911
       - 10912:10912
     environment:
-      - NAMESRV_ADDR=namesrv:9876
-    volumes:
-      - ./broker/logs:/home/rocketmq/logs
-      - ./broker/store:/home/rocketmq/store
-      - ./broker/conf:/opt/rocketmq/conf
+      - NAMESRV_ADDR=rmqnamesrv:9876
+    depends_on:
+      - namesrv
+    networks:
+      - rocketmq
+    command: sh mqbroker
+  proxy:
+    image: registry.cn-hangzhou.aliyuncs.com/dockerhub_mirror/rocketmq:5.3.0
+    container_name: rmqproxy
+    networks:
+      - rocketmq
+    depends_on:
+      - broker
+      - namesrv
+    ports:
+      - 8080:8080
+      - 8081:8081
+    restart: on-failure
+    environment:
+      - NAMESRV_ADDR=rmqnamesrv:9876
+    command: sh mqproxy
+networks:
+  rocketmq:
+    driver: bridge
