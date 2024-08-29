@@ -1,40 +1,33 @@
-version: '3.8'
-
+version: "3"
 services:
-  rmqnamesrv:
-    image: registry.cn-hangzhou.aliyuncs.com/dockerhub_mirror/rocketmq:4.9.1
-    container_name: rmqnamesrv
+  #Service for nameserver
+  namesrv:
+    container_name: RocketMQ-namesrv
+    image: registry.cn-hangzhou.aliyuncs.com/dockerhub_mirror/rocketmq:5.3.0
+    command: sh mqnamesrv
+    restart: always
     ports:
       - 9876:9876
     volumes:
-      - ./broker.conf:/home/rocketmq/rocketmq-4.9.1/conf/broker.conf
-    environment:
-      JAVA_OPT_EXT: "-Duser.home=/home/rocketmq -Xms512M -Xmx512M -Xmn128m"
-    command: ["sh","mqnamesrv"]
+      - ./namesrv/logs:/home/rocketmq/logs
 
+
+  #Service for broker
   broker:
-    image: registry.cn-hangzhou.aliyuncs.com/dockerhub_mirror/rocketmq:4.9.1
-    container_name: rmqbroker
+    container_name: RocketMQ-broker
+    links:
+      - namesrv
+    image: registry.cn-hangzhou.aliyuncs.com/dockerhub_mirror/rocketmq:5.3.0
+    command: sh mqbroker --enable-proxy -c /opt/rocketmq/conf/broker.conf
+    restart: always
     ports:
+      - 8080:8080
       - 10909:10909
       - 10911:10911
       - 10912:10912
+    environment:
+      - NAMESRV_ADDR=namesrv:9876
     volumes:
-      - ./broker.conf:/home/rocketmq/rocketmq-4.9.1/conf/broker.conf
-    links:
-      - rmqnamesrv:namesrv
-    environment:
-      NAMESRV_ADDR: namesrv:9876
-      JAVA_OPT_EXT: "-Duser.home=/home/rocketmq -Xms512M -Xmx512M -Xmn128m"
-    command: ["sh","mqbroker","-c","../conf/broker.conf","autoCreateTopicEnable=true"]
-
-  rmqdashboard:
-    image: registry.cn-hangzhou.aliyuncs.com/dockerhub_mirror/rocketmq-dashboard:latest
-    container_name: rocketmq-dashboard
-    ports:
-      - 8080:8080
-    environment:
-        JAVA_OPTS: "-Drocketmq.namesrv.addr=namesrv:9876"
-    links:
-      - rmqnamesrv:namesrv
-
+      - ./broker/logs:/home/rocketmq/logs
+      - ./broker/store:/home/rocketmq/store
+      - ./broker/conf:/opt/rocketmq/conf
